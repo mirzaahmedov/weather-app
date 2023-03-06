@@ -1,31 +1,18 @@
-import { useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import useURLSearchParams from "@/hooks/useURLSearchParams"
 
 const Home = () => {
-  const [searchParams, setSearchParams] = useSearchParams()
-
-  useEffect(() => {
-    if (!searchParams.has('time')) {
-      const params = new URLSearchParams(searchParams)
-      params.set('time', Date.now().toString())
-
-      setSearchParams(params)
-    }
-
-    if (!searchParams.has('latitude') || !searchParams.has('longitude')) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const params = new URLSearchParams(searchParams)
-        params.set('latitude', position.coords.latitude.toString())
-        params.set('longitude', position.coords.longitude.toString())
-
-        setSearchParams(params)
-      })
-    }
-  }, [])
+  const [searchParams, error] = useURLSearchParams()
 
   return (
     <div>
-      Home
+    {searchParams ? (
+      "Home"
+    ) : (
+      <div>
+        <h1>Something went wrong</h1>
+        <p>{error?.message}</p>
+      </div>
+    )}
     </div>
   )
 }

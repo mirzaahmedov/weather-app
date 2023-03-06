@@ -1,35 +1,52 @@
-import { useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
+type Params = {
+  time: number | null;
+  latitude: number | null;
+  longitude: number | null;
+}
 const useURLSearchParams = () => {
-  const navigate = useNavigate();
-
   const [searchParams, setSearchParams] = useSearchParams();
+  const [params, setParams] = useState<null | Params>();
+  const [error, setError] = useState<null | GeolocationPositionError>();
 
   useEffect(() => {
-    if (!searchParams.has("latitude") || !searchParams.has("longitude")) {
-      const newSearchParams = new URLSearchParams(searchParams);
+    const time = JSON.parse(searchParams.get("time") || "null");
+    const latitude = JSON.parse(searchParams.get("latitude") || "null");
+    const longitude = JSON.parse(searchParams.get("longitude") || "null");
+
+    if (!time) {
+      const newParams = new URLSearchParams();
+      newParams.set("time", JSON.stringify(Date.now()));
+      setSearchParams(newParams);
+      
+      return
+    }
+    if (!latitude || !longitude) {
+      const newParams = new URLSearchParams(searchParams);
 
       window.navigator.geolocation.getCurrentPosition((position) => {
-        newSearchParams.set("latitude", position.coords.latitude.toString());
-        newSearchParams.set("longitude", position.coords.longitude.toString());
-        navigate("/?" + newSearchParams.toString());
+        newParams.set("latitude", JSON.stringify(position.coords.latitude));
+        newParams.set("longitude", JSON.stringify(position.coords.longitude));
+        setSearchParams(newParams);
       }, (error) => {
-        if (error.code === error.PERMISSION_DENIED) {
-          alert("Please allow location access to use this app.");
-        }
-      })
+          setError(error);
+      });
+
+      return
     }
 
-    if (!searchParams.has("time")) {
-      const newSearchParams = new URLSearchParams(searchParams);
-
-      newSearchParams.set("time", Date.now().toString());
-      navigate("/?" + newSearchParams.toString());
+    const values = {
+      time,
+      latitude,
+      longitude
     }
-  }, [searchParams, navigate]);
 
-  return [searchParams, setSearchParams] as const;
+    setParams(values);
+  }, [searchParams]);
+
+  return [params, error] as const
 }
 
 export default useURLSearchParams;
